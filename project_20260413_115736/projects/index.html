@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>异界寻钥 - 场景解谜游戏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; color: #fff;
+        }
+        h1 { font-size: 1.6rem; margin-bottom: 6px; background: linear-gradient(90deg, #ffd700, #ff6b6b, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .subtitle { color: #aaa; margin-bottom: 10px; font-size: 0.8rem; }
+        .game-container { background: rgba(0, 0, 0, 0.5); border-radius: 16px; padding: 15px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.1); max-width: 100%; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-wrap: wrap; gap: 8px; }
+        .scene-indicator { font-size: 0.9rem; font-weight: bold; padding: 5px 12px; border-radius: 18px; transition: all 0.3s ease; }
+        .scene-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .scene-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .inventory { display: flex; gap: 8px; align-items: center; }
+        .inventory-item { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.1); font-size: 0.75rem; }
+        .key-gold { color: #ffd700; }
+        .key-silver { color: #c0c0c0; }
+        .game-map { display: grid; gap: 1px; background: rgba(0, 0, 0, 0.3); padding: 6px; border-radius: 10px; margin-bottom: 10px; overflow-x: auto; }
+        .cell { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; border-radius: 2px; transition: all 0.1s ease; }
+        .wall { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: #1a252f; }
+        .floor { background: rgba(255, 255, 255, 0.03); }
+        .player { background: linear-gradient(135deg, #00b894 0%, #00cec9 100%); color: #fff; box-shadow: 0 0 8px rgba(0, 184, 148, 0.6); animation: pulse 1.5s infinite; z-index: 10; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .key-gold-item { background: rgba(255, 215, 0, 0.2); border: 2px solid #ffd700; color: #ffd700; }
+        .key-silver-item { background: rgba(192, 192, 192, 0.2); border: 2px solid #c0c0c0; color: #c0c0c0; }
+        .door-gold { background: rgba(255, 215, 0, 0.25); border: 2px solid #ffd700; color: #ffd700; }
+        .door-silver { background: rgba(192, 192, 192, 0.25); border: 2px solid #c0c0c0; color: #c0c0c0; }
+        .door-green { background: rgba(0, 255, 127, 0.25); border: 2px solid #00ff7f; color: #00ff7f; }
+        .start { background: rgba(46, 204, 113, 0.2); border: 2px solid #2ecc71; color: #2ecc71; }
+        .end { background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; color: #e74c3c; animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 6px rgba(231, 76, 60, 0.3); } 50% { box-shadow: 0 0 12px rgba(231, 76, 60, 0.5); } }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .control-row { display: flex; gap: 5px; }
+        .control-btn { width: 44px; height: 44px; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s ease; }
+        .move-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .move-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5); }
+        .switch-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; width: 130px; font-size: 0.8rem; padding: 8px; }
+        .switch-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5); }
+        .message { margin-top: 8px; padding: 6px 12px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s ease; min-height: 32px; }
+        .message.show { opacity: 1; }
+        .message.info { background: rgba(52, 152, 219, 0.3); border: 1px solid #3498db; color: #3498db; }
+        .message.success { background: rgba(46, 204, 113, 0.3); border: 1px solid #2ecc71; color: #2ecc71; }
+        .message.warning { background: rgba(241, 196, 15, 0.3); border: 1px solid #f1c40f; color: #f1c40f; }
+        .message.error { background: rgba(231, 76, 60, 0.3); border: 1px solid #e74c3c; color: #e74c3c; }
+        .hint-text { margin-top: 8px; font-size: 0.7rem; color: #888; text-align: center; }
+        .legend { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: #aaa; }
+        .legend-symbol { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.75rem; }
+        .win-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+        .win-overlay.show { opacity: 1; pointer-events: auto; }
+        .win-text { font-size: 2.5rem; font-weight: bold; background: linear-gradient(90deg, #ffd700, #ff6b6b, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 15px; }
+        .win-stats { color: #aaa; font-size: 0.9rem; margin-bottom: 15px; }
+        .restart-btn { padding: 10px 25px; font-size: 0.9rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 20px; color: white; cursor: pointer; }
+        .restart-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.6); }
+    </style>
+</head>
+<body>
+    <h1>异界寻钥</h1>
+    <p class="subtitle">双场景解谜游戏</p>
+
+    <div class="game-container">
+        <div class="game-header">
+            <div class="scene-indicator scene-1" id="sceneIndicator">场景一</div>
+            <div class="inventory">
+                <div class="inventory-item key-gold" id="keyGold">金钥匙: 无</div>
+                <div class="inventory-item key-silver" id="keySilver">银钥匙: 无</div>
+            </div>
+        </div>
+
+        <div class="game-map" id="gameMap"></div>
+
+        <div class="controls">
+            <button class="control-btn move-btn" onclick="move('up')">↑</button>
+            <div class="control-row">
+                <button class="control-btn move-btn" onclick="move('left')">←</button>
+                <button class="control-btn move-btn" onclick="move('down')">↓</button>
+                <button class="control-btn move-btn" onclick="move('right')">→</button>
+            </div>
+            <button class="control-btn switch-btn" onclick="switchScene()">切换场景</button>
+        </div>
+
+        <div class="message" id="message"></div>
+        <div class="hint-text">方向键移动 | 空格切换场景</div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-symbol player">我</div>玩家</div>
+            <div class="legend-item"><div class="legend-symbol wall">█</div>墙壁</div>
+            <div class="legend-item"><div class="legend-symbol start">出</div>起点</div>
+            <div class="legend-item"><div class="legend-symbol end">终</div>终点</div>
+            <div class="legend-item"><div class="legend-symbol key-gold-item">匙</div>金钥匙/金门</div>
+            <div class="legend-item"><div class="legend-symbol key-silver-item">匙</div>银钥匙/银门</div>
+        </div>
+    </div>
+
+    <div class="win-overlay" id="winOverlay">
+        <div class="win-text">恭喜通关!</div>
+        <div class="win-stats" id="winStats">用时 X 步</div>
+        <button class="restart-btn" onclick="restartGame()">重新开始</button>
+    </div>
+
+    <script>
+        let currentScene = 1;
+        let playerPos = { x: 12, y: 12 };
+        let hasGoldKey = false;
+        let hasSilverKey = false;
+        let goldDoorOpen = false;
+        let silverDoorOpen = false;
+        let goldKeyCollected = false;
+        let silverKeyCollected = false;
+        let steps = 0;
+        let gameWon = false;
+
+        // 场景一 (15x15) - 严格按用户地图
+        // 终(1,1), 金钥匙(1,13), 金门(8,11), 起点(12,12)/(12,13)
+        const scene1Map = [
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█'],
+            ['█','终','█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█','█','█','█','█','█','█','█','门','█','█','█','█','█','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ','出',' ','█'],
+            ['█','匙',' ',' ','█',' ',' ',' ',' ',' ',' ',' ','出',' ','█'],
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█']
+        ];
+
+        // 场景二 (15x15) - 严格按用户地图
+        // 银钥匙(3,1), 银门(1,3), 起点(12,12)/(12,13)
+        const scene2Map = [
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█'],
+            ['█',' ','█','匙',' ',' ','█',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█',' ','█',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█','门','█','█','█','█','█','█','█','█','█',' ',' ','█','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█',' ',' ',' ','█'],
+            ['█','█','█','█','█','█','█',' ','█','█','█','█','█','█','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ',' ',' ','█'],
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█'],
+            ['█',' ',' ',' ','█',' ',' ',' ',' ',' ',' ',' ','出',' ','█'],
+            ['█',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','出',' ','█'],
+            ['█','█','█','█','█','█','█','█','█','█','█','█','█','█','█']
+        ];
+
+        // 场景一关键位置
+        const SCENE1_START = { x: 12, y: 12 };
+        const SCENE1_END = { x: 1, y: 1 };
+        const SCENE1_GOLD_KEY = { x: 1, y: 13 };
+        const SCENE1_GOLD_DOOR = { x: 8, y: 11 };
+
+        // 场景二关键位置
+        const SCENE2_START = { x: 12, y: 12 };
+        const SCENE2_SILVER_KEY = { x: 3, y: 1 };
+        const SCENE2_SILVER_DOOR = { x: 1, y: 3 };
+
+        function initGame() {
+            currentScene = 1;
+            playerPos = { x: SCENE1_START.x, y: SCENE1_START.y };
+            hasGoldKey = hasSilverKey = goldDoorOpen = silverDoorOpen = false;
+            goldKeyCollected = silverKeyCollected = false;
+            steps = 0;
+            gameWon = false;
+            updateUI();
+            renderMap();
+            showMessage('开始游戏! 寻找钥匙,打开门,到达终点!', 'info');
+        }
+
+        function renderMap() {
+            const mapEl = document.getElementById('gameMap');
+            const map = currentScene === 1 ? scene1Map : scene2Map;
+            const cols = map[0].length;
+            mapEl.style.gridTemplateColumns = `repeat(${cols}, 26px)`;
+            mapEl.innerHTML = '';
+
+            for (let y = 0; y < map.length; y++) {
+                for (let x = 0; x < map[y].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+
+                    // 玩家
+                    if (playerPos.x === x && playerPos.y === y) {
+                        cell.textContent = '我';
+                        cell.classList.add('player');
+                    }
+                    // 终点
+                    else if (isEnd(x, y)) {
+                        cell.textContent = '终';
+                        cell.classList.add('end');
+                    }
+                    // 起点
+                    else if (isStart(x, y)) {
+                        cell.textContent = '出';
+                        cell.classList.add('start');
+                    }
+                    // 场景一金钥匙
+                    else if (currentScene === 1 && x === SCENE1_GOLD_KEY.x && y === SCENE1_GOLD_KEY.y && !goldKeyCollected) {
+                        cell.textContent = '匙';
+                        cell.classList.add('key-gold-item');
+                    }
+                    // 场景二银钥匙
+                    else if (currentScene === 2 && x === SCENE2_SILVER_KEY.x && y === SCENE2_SILVER_KEY.y && !silverKeyCollected) {
+                        cell.textContent = '匙';
+                        cell.classList.add('key-silver-item');
+                    }
+                    // 场景一金门
+                    else if (currentScene === 1 && x === SCENE1_GOLD_DOOR.x && y === SCENE1_GOLD_DOOR.y) {
+                        cell.textContent = '门';
+                        cell.classList.add(goldDoorOpen ? 'door-green' : 'door-gold');
+                    }
+                    // 场景二银门
+                    else if (currentScene === 2 && x === SCENE2_SILVER_DOOR.x && y === SCENE2_SILVER_DOOR.y) {
+                        cell.textContent = '门';
+                        cell.classList.add(silverDoorOpen ? 'door-green' : 'door-silver');
+                    }
+                    // 墙壁
+                    else if (map[y][x] === '█') {
+                        cell.textContent = '█';
+                        cell.classList.add('wall');
+                    }
+                    // 地面
+                    else {
+                        cell.classList.add('floor');
+                    }
+                    mapEl.appendChild(cell);
+                }
+            }
+        }
+
+        function isEnd(x, y) {
+            return currentScene === 1 && x === SCENE1_END.x && y === SCENE1_END.y;
+        }
+
+        function isStart(x, y) {
+            if (currentScene === 1) {
+                return (x === SCENE1_START.x && y === SCENE1_START.y) || (x === 12 && y === 13);
+            }
+            return (x === SCENE2_START.x && y === SCENE2_START.y) || (x === 12 && y === 13);
+        }
+
+        function move(dir) {
+            if (gameWon) return;
+
+            let nx = playerPos.x, ny = playerPos.y;
+            if (dir === 'up') ny--;
+            else if (dir === 'down') ny++;
+            else if (dir === 'left') nx--;
+            else if (dir === 'right') nx++;
+
+            const map = currentScene === 1 ? scene1Map : scene2Map;
+            if (nx < 0 || nx >= map[0].length || ny < 0 || ny >= map.length) return;
+            if (map[ny][nx] === '█') { showMessage('撞墙了', 'warning'); return; }
+
+            // 检查场景一金门
+            if (currentScene === 1 && nx === SCENE1_GOLD_DOOR.x && ny === SCENE1_GOLD_DOOR.y && !goldDoorOpen) {
+                if (hasGoldKey) {
+                    goldDoorOpen = true;
+                    showMessage('金门已开!', 'success');
+                } else {
+                    showMessage('需要金钥匙!', 'error');
+                    return;
+                }
+            }
+
+            // 检查场景二银门
+            if (currentScene === 2 && nx === SCENE2_SILVER_DOOR.x && ny === SCENE2_SILVER_DOOR.y && !silverDoorOpen) {
+                if (hasSilverKey) {
+                    silverDoorOpen = true;
+                    showMessage('银门已开!', 'success');
+                } else {
+                    showMessage('需要银钥匙!', 'error');
+                    return;
+                }
+            }
+
+            playerPos = { x: nx, y: ny };
+            steps++;
+            renderMap();
+            checkPickup();
+            checkWin();
+        }
+
+        function checkPickup() {
+            // 场景一金钥匙
+            if (currentScene === 1 && playerPos.x === SCENE1_GOLD_KEY.x && playerPos.y === SCENE1_GOLD_KEY.y && !goldKeyCollected) {
+                hasGoldKey = true;
+                goldKeyCollected = true;
+                showMessage('获得金钥匙!', 'success');
+                updateUI();
+            }
+            // 场景二银钥匙
+            if (currentScene === 2 && playerPos.x === SCENE2_SILVER_KEY.x && playerPos.y === SCENE2_SILVER_KEY.y && !silverKeyCollected) {
+                hasSilverKey = true;
+                silverKeyCollected = true;
+                showMessage('获得银钥匙!', 'success');
+                updateUI();
+            }
+        }
+
+        function checkWin() {
+            if (currentScene === 1 && playerPos.x === SCENE1_END.x && playerPos.y === SCENE1_END.y) {
+                if (goldDoorOpen) {
+                    gameWon = true;
+                    document.getElementById('winStats').textContent = `通关! 用时 ${steps} 步`;
+                    document.getElementById('winOverlay').classList.add('show');
+                } else {
+                    showMessage('需要打开金门才能通过终点!', 'warning');
+                    playerPos = { x: SCENE1_START.x, y: SCENE1_START.y };
+                    renderMap();
+                }
+            }
+        }
+
+        function switchScene() {
+            if (gameWon) return;
+            currentScene = currentScene === 1 ? 2 : 1;
+            updateUI();
+            renderMap();
+            showMessage(`切换到场景${currentScene}`, 'info');
+        }
+
+        function updateUI() {
+            const ind = document.getElementById('sceneIndicator');
+            ind.textContent = `场景${currentScene}`;
+            ind.className = `scene-indicator scene-${currentScene}`;
+            document.getElementById('keyGold').textContent = `金钥匙: ${hasGoldKey ? '已获得' : '无'}`;
+            document.getElementById('keySilver').textContent = `银钥匙: ${hasSilverKey ? '已获得' : '无'}`;
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message show ${type}`;
+            setTimeout(() => msg.classList.remove('show'), 2500);
+        }
+
+        function restartGame() {
+            document.getElementById('winOverlay').classList.remove('show');
+            initGame();
+        }
+
+        document.addEventListener('keydown', e => {
+            if (gameWon && e.key !== 'r' && e.key !== 'R') return;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); move('up'); }
+            else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); move('down'); }
+            else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); move('left'); }
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); move('right'); }
+            else if (e.key === ' ') { e.preventDefault(); switchScene(); }
+            else if (e.key === 'r' || e.key === 'R') restartGame();
+        });
+
+        initGame();
+    </script>
+</body>
+</html>
