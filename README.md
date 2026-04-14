@@ -24,7 +24,7 @@
 ---
 
 ## 项目展示
-<img width="2448" height="1452" alt="image" src="https://github.com/user-attachments/assets/3887ce81-cb7c-4426-96a4-bae2a8d59c2a" />
-<img width="2439" height="1446" alt="image" src="https://github.com/user-attachments/assets/f56ba01b-dff8-4f93-9933-4a8843f4b0ca" />
-<img width="2442" height="1448" alt="image" src="https://github.com/user-attachments/assets/bf83aa99-e2f2-4924-91db-70cf824ea28b" />
-<img width="2310" height="1371" alt="image" src="https://github.com/user-attachments/assets/751c9036-f8eb-46cc-82bb-5dec085a39cc" />
+<img width="2448" height="1452" alt="image" src="https://github.com/yu1234456789/Maze/blob/main/image/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202026-04-14%20154842.png" />
+<img width="2439" height="1446" alt="image" src="https://github.com/yu1234456789/Maze/blob/main/image/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202026-04-14%20160024.png" />
+<img width="2442" height="1448" alt="image" src="https://github.com/yu1234456789/Maze/blob/main/image/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202026-04-14%20160052.png" />
+<img width="2310" height="1371" alt="image" src="https://github.com/yu1234456789/Maze/blob/main/image/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202026-04-14%20160122.png" />
